@@ -51,9 +51,15 @@ if data_option == "Upload Excel file":
 else:
     df = load_default_data()
 
+# --- Data preparation ---
+# Remove the "Note" column if it exists
+if "Note" in df.columns:
+    df.drop(columns=["Note"], inplace=True)
+
 # Sidebar filters
 st.sidebar.header("Filters")
 today = datetime.today()
+today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
 
 tab0, tab1, tab2 = st.tabs(
     [
@@ -74,16 +80,16 @@ date_filter = st.sidebar.selectbox(
 )
 
 if date_filter == "This month":
-    start_date = today.replace(day=1)
+    start_date = today_start.replace(day=1)
     end_date = today
 elif date_filter == "This year":
-    start_date = today.replace(month=1, day=1)
+    start_date = today_start.replace(month=1, day=1)
     end_date = today
 elif date_filter == "Last + This year":
-    start_date = today.replace(year=today.year - 1, month=1, day=1)
+    start_date = today_start.replace(year=today.year - 1, month=1, day=1)
     end_date = today
 else:
-    start_date = st.sidebar.date_input("Start date", today.replace(month=1, day=1))
+    start_date = st.sidebar.date_input("Start date", today_start.replace(month=1, day=1))
     end_date = st.sidebar.date_input("End date", today)
 
 # Filter by date
