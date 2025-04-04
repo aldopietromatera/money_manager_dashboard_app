@@ -7,6 +7,8 @@ import re
 from agreement import check_user_agreement
 from util import load_data_from_file, load_default_data, clear_cache
 
+st.set_page_config(page_title="My Dashboard", page_icon="📊")
+
 # Privacy policy and terms of use
 check_user_agreement()
 
@@ -27,6 +29,21 @@ if data_option == "Upload Excel file":
             "Your data remains private and is automatically deleted after the analysis.",
             icon="⚠️",
         )
+        st.info(
+        """Please, download your data from the Money Manager app and upload the XLSX file.
+
+        How to Download Your Data 🤔
+
+        1. Open the app.
+        2. Go to "More" in the bottom right corner.
+        3. Tap "Backup".
+        4. Tap "Export data to Excel".
+        5. Tap "Total" or whatever you want.
+        6. Upload the XLSX file via the sidebar on the left , and Voilà! 🎉
+        """,
+        icon="ℹ️"
+    )
+
         st.stop()
     df = load_data_from_file(uploaded_file)
 else:
