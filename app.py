@@ -13,7 +13,9 @@ st.set_page_config(page_title="My Dashboard", page_icon="📊")
 check_user_agreement()
 
 # Title
-st.title("📊 Money Manager Dashboard")
+# st.title("📊 Money Manager Dashboard")
+st.markdown("### 📊 [Money Manager](https://www.realbyteapps.com/) Dashboard")
+
 
 # --- File upload or default data ---
 st.sidebar.markdown("## 📁 Data Source")
