@@ -32,7 +32,7 @@ if data_option == "Upload Excel file":
             icon="⚠️",
         )
         st.info(
-        """Please, download your data from the Money Manager app and upload the XLSX file.
+            """Please, download your data from the Money Manager app and upload the XLSX file.
 
         How to Download Your Data 🤔
 
@@ -43,8 +43,8 @@ if data_option == "Upload Excel file":
         5. Tap "Total" or whatever you want.
         6. Upload the XLSX file via the sidebar on the left , and Voilà! 🎉
         """,
-        icon="ℹ️"
-    )
+            icon="ℹ️",
+        )
 
         st.stop()
     df = load_data_from_file(uploaded_file)
@@ -89,7 +89,9 @@ elif date_filter == "Last + This year":
     start_date = today_start.replace(year=today.year - 1, month=1, day=1)
     end_date = today
 else:
-    start_date = st.sidebar.date_input("Start date", today_start.replace(month=1, day=1))
+    start_date = st.sidebar.date_input(
+        "Start date", today_start.replace(month=1, day=1)
+    )
     end_date = st.sidebar.date_input("End date", today)
 
 # Filter by date
@@ -143,8 +145,8 @@ if filtered_df.empty:
     st.stop()
 
 # Totals
-total_expenses = filtered_df[filtered_df["Income/Expense"] == "Exp."]["Amount"].sum()
-total_incomes = filtered_df[filtered_df["Income/Expense"] == "Income"]["Amount"].sum()
+total_expenses = filtered_df[filtered_df["Income/Expense"] == "Exp."]["EUR"].sum()
+total_incomes = filtered_df[filtered_df["Income/Expense"] == "Income"]["EUR"].sum()
 diff = total_incomes - total_expenses
 
 # Show totals in sidebar
@@ -156,20 +158,30 @@ st.sidebar.markdown(f"**📊 Net:** € {diff:,.2f}")
 with tab0:
     exp_df = filtered_df[filtered_df["Income/Expense"] == "Exp."]
     category_totals = (
-        exp_df.groupby("Category")["Amount"]
+        exp_df.groupby("Category")["EUR"]
         .sum()
         .reset_index()
-        .sort_values(by="Amount", ascending=False)
+        .sort_values(by="EUR", ascending=False)
     )
     fig = px.bar(
         category_totals,
         x="Category",
-        y="Amount",
+        y="EUR",
         color="Category",
         title=f'Expenses by Category ({start_date.strftime("%d %B %Y")} to {end_date.strftime("%d %B %Y")})',
-        labels={"Amount": "Total"},
+        labels={"EUR": "Total"},
     )
     st.plotly_chart(fig, use_container_width=True)
+
+    # Donut chart for percentage by category
+    fig_donut = px.pie(
+        category_totals,
+        names="Category",
+        values="EUR",
+        hole=0.4,
+        title=f"Expense Distribution by Category (%) - ({start_date.strftime("%d %B %Y")} to {end_date.strftime("%d %B %Y")})",
+    )
+    st.plotly_chart(fig_donut, use_container_width=True)
 
 with tab1:
     exp_df = filtered_df[filtered_df["Income/Expense"] == "Exp."]
@@ -183,10 +195,8 @@ with tab1:
         )
 
     if num_months > 0:
-        total_per_category = exp_df.groupby("Category")["Amount"].sum().reset_index()
-        total_per_category["Monthly Average"] = (
-            total_per_category["Amount"] / num_months
-        )
+        total_per_category = exp_df.groupby("Category")["EUR"].sum().reset_index()
+        total_per_category["Monthly Average"] = total_per_category["EUR"] / num_months
         total_per_category = total_per_category.sort_values(
             by="Monthly Average", ascending=False
         )
@@ -219,18 +229,18 @@ with tab2:
     if "Subcategory" in cat_df.columns and cat_df["Subcategory"].notna().any():
         subcat_df = cat_df[cat_df["Subcategory"].notna()]
         subcat_totals = (
-            subcat_df.groupby("Subcategory")["Amount"]
+            subcat_df.groupby("Subcategory")["EUR"]
             .sum()
             .reset_index()
-            .sort_values(by="Amount", ascending=False)
+            .sort_values(by="EUR", ascending=False)
         )
 
         fig = px.bar(
             subcat_totals,
             x="Subcategory",
-            y="Amount",
+            y="EUR",
             color="Subcategory",
-            labels={"Amount": "Total"},
+            labels={"EUR": "Total"},
             title=f"Subcategory Breakdown for {selected_drilldown_cat}",
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -240,9 +250,9 @@ with tab2:
     # Show raw transactions regardless
     st.markdown("### 💡 Transactions")
     st.dataframe(
-        cat_df[
-            ["Period", "Subcategory", "Accounts", "Amount", "Description"]
-        ].sort_values(by="Period", ascending=False),
+        cat_df[["Period", "Subcategory", "Accounts", "EUR", "Description"]].sort_values(
+            by="Period", ascending=False
+        ),
         use_container_width=True,
     )
 
