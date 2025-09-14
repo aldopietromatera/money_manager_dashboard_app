@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, timedelta
+from datetime import datetime
 import re
 
 from agreement import check_user_agreement
@@ -49,6 +49,7 @@ if data_option == "Upload Excel file":
         st.stop()
     df = load_data_from_file(uploaded_file)
 else:
+    st.sidebar.warning("⚠️ Sample data are available only for April 2025 to June 2025.")
     df = load_default_data()
 
 # --- Data preparation ---
@@ -61,11 +62,12 @@ st.sidebar.header("Filters")
 today = datetime.today()
 today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
 
-tab0, tab1, tab2 = st.tabs(
+tab0, tab1, tab2, tab3 = st.tabs(
     [
         "📂 Expenses by Category",
         "📈 Monthly Avg by Category",
         "🔍 Category ➝ Subcategory Drilldown",
+        "📈 Monthly Overview",
     ]
 )
 
@@ -168,7 +170,7 @@ with tab0:
         x="Category",
         y="EUR",
         color="Category",
-        title=f'Expenses by Category ({start_date.strftime("%d %B %Y")} to {end_date.strftime("%d %B %Y")})',
+        title=f"Expenses by Category ({start_date.strftime('%d %B %Y')} to {end_date.strftime('%d %B %Y')})",
         labels={"EUR": "Total"},
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -179,7 +181,7 @@ with tab0:
         names="Category",
         values="EUR",
         hole=0.4,
-        title=f"Expense Distribution by Category (%) - ({start_date.strftime("%d %B %Y")} to {end_date.strftime("%d %B %Y")})",
+        title=f"Expense Distribution by Category (%) - ({start_date.strftime('%d %B %Y')} to {end_date.strftime('%d %B %Y')})",
     )
     st.plotly_chart(fig_donut, use_container_width=True)
 
@@ -207,7 +209,7 @@ with tab1:
             y="Monthly Average",
             color="Category",
             labels={"Monthly Average": "Avg Expense per Month"},
-            title=f'Average Monthly Expense per Category ({start_date.strftime("%d %B %Y")} to {end_date.strftime("%d %B %Y")})',
+            title=f"Average Monthly Expense per Category ({start_date.strftime('%d %B %Y')} to {end_date.strftime('%d %B %Y')})",
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -255,6 +257,54 @@ with tab2:
         ),
         use_container_width=True,
     )
+
+with tab3:
+    st.subheader(
+        f"Monthly Overview ({start_date.strftime('%d %b %Y')} – {end_date.strftime('%d %b %Y')})"
+    )
+
+    # Create a 'Month' column
+    df_monthly = filtered_df.copy()
+    df_monthly["Month"] = df_monthly["Period"].dt.to_period("M").dt.to_timestamp()
+
+    # Compute totals per month
+    monthly_totals = (
+        df_monthly.groupby("Month")
+        .apply(
+            lambda x: pd.Series(
+                {
+                    "Expenses": x[x["Income/Expense"] == "Exp."]["EUR"].sum(),
+                    "Incomes": x[x["Income/Expense"] == "Income"]["EUR"].sum(),
+                }
+            )
+        )
+        .reset_index()
+    )
+
+    monthly_totals["Net"] = monthly_totals["Incomes"] - monthly_totals["Expenses"]
+
+    # Create 'Month' as a string
+    monthly_totals["MonthStr"] = monthly_totals["Month"].dt.strftime("%b %Y")
+
+    fig = px.line(
+        monthly_totals,
+        x="MonthStr",
+        y=["Expenses", "Incomes", "Net"],
+        labels={"value": "Amount (€)", "MonthStr": "Month"},
+        title="Monthly Expenses, Incomes, and Net",
+        markers=True,
+    )
+
+    # Set line colors
+    fig.update_traces(selector=dict(name="Incomes"), line=dict(color="green"))
+    fig.update_traces(selector=dict(name="Expenses"), line=dict(color="red"))
+    fig.update_traces(selector=dict(name="Net"), line=dict(color="blue"))
+
+    # Format x-axis to show only Month Year
+    fig.update_xaxes(tickformat="%b %Y")
+
+    st.plotly_chart(fig, use_container_width=True)
+
 
 # Clear cache
 clear_cache()
